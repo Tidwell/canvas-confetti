@@ -39,5 +39,5 @@ coverage/
 
 # project-specific stuff
 shots/
-dist/
+#dist/ - removed so we can use the branch as a dependency
 temp/
