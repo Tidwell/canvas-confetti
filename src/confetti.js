@@ -421,6 +421,7 @@
       var colors = prop(options, 'colors');
       var ticks = prop(options, 'ticks', Number);
       var shapes = prop(options, 'shapes');
+      var scalar = prop(options, 'scalar');
       var origin = getOrigin(options);
 
       var temp = particleCount;
@@ -441,7 +442,8 @@
             shape: shapes[randomInt(0, shapes.length)],
             ticks: ticks,
             decay: decay,
-            gravity: gravity
+            gravity: gravity,
+            scalar: scalar
           })
         );
       }
