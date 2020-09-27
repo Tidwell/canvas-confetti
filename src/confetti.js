@@ -67,11 +67,10 @@
   }());
 
   var getWorker = (function () {
-    var defaultWorker;
-    var prom;
-    var resolves = {};
-
     function decorate(worker) {
+      var prom;
+      var resolves = {};
+
       function execute(options, callback) {
         worker.postMessage({ options: options || {}, callback: callback });
       }
@@ -121,12 +120,12 @@
       };
     }
 
-    return function (canvas) {
-      if (canvas && canvas.__confetti_worker) {
-        return canvas.__confetti_worker;
+    function workerForCanvas(canvas) {
+      if (!canvas) {
+        return null;
       }
-      if (!canvas && defaultWorker) {
-        return defaultWorker;
+      if (canvas.__confetti_worker) {
+        return canvas.__confetti_worker;
       }
 
       if (!isWorker && canUseWorker) {
@@ -154,11 +153,7 @@
         ].join('\n');
         try {
           var newWorker = new Worker(URL.createObjectURL(new Blob([code])));
-          if (canvas) {
-            canvas.__confetti_worker = newWorker;
-          } else {
-            defaultWorker = newWorker;
-          }
+          canvas.__confetti_worker = newWorker;
         } catch (e) {
           // eslint-disable-next-line no-console
           typeof console !== undefined && typeof console.warn === 'function' ? console.warn('🎊 Could not load worker', e) : null;
@@ -169,8 +164,10 @@
         decorate(newWorker);
       }
 
-      return canvas ? canvas.__confetti_worker : defaultWorker;
-    };
+      return canvas.__confetti_worker;
+    }
+
+    return workerForCanvas;
   })();
 
   var defaults = {
@@ -413,7 +410,7 @@
     var allowResize = !!prop(globalOpts || {}, 'resize');
     var globalDisableForReducedMotion = prop(globalOpts, 'disableForReducedMotion', Boolean);
     var shouldUseWorker = canUseWorker && !!prop(globalOpts || {}, 'useWorker');
-    var worker = shouldUseWorker ? getWorker(canvas) : null;
+    var worker = shouldUseWorker && canvas ? getWorker(canvas) : null;
     var resizer = isLibCanvas ? setCanvasWindowSize : setCanvasRectSize;
     var initialized = (canvas && worker) ? !!canvas.__confetti_initialized : false;
     var preferLessMotion = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion)').matches;
@@ -491,6 +488,11 @@
         resizer(canvas);
       }
 
+      if (shouldUseWorker) {
+        // create the worker if we need it
+        worker = getWorker(canvas) || null;
+      }
+
       var size = {
         width: canvas.width,
         height: canvas.height
@@ -541,6 +543,11 @@
         }
 
         if (isLibCanvas && canvas) {
+          if (worker) {
+            worker.terminate();
+            delete canvas.__confetti_worker;
+            worker = null;
+          }
           document.body.removeChild(canvas);
           canvas = null;
           initialized = false;
