@@ -67,7 +67,7 @@
   }());
 
   var getWorker = (function () {
-    var defaultWorker;
+    var workerMap = new Map();
     var prom;
     var resolves = {};
 
@@ -122,11 +122,8 @@
     }
 
     return function (canvas) {
-      if (canvas && canvas.__confetti_worker) {
-        return canvas.__confetti_worker;
-      }
-      if (!canvas && defaultWorker) {
-        return defaultWorker;
+      if (workerMap.get(canvas)) {
+        return workerMap.get(canvas);
       }
 
       if (!isWorker && canUseWorker) {
@@ -153,12 +150,7 @@
           '}',
         ].join('\n');
         try {
-          var newWorker = new Worker(URL.createObjectURL(new Blob([code])));
-          if (canvas) {
-            canvas.__confetti_worker = newWorker;
-          } else {
-            defaultWorker = newWorker;
-          }
+          workerMap.set(canvas, new Worker(URL.createObjectURL(new Blob([code]))));
         } catch (e) {
           // eslint-disable-next-line no-console
           typeof console !== undefined && typeof console.warn === 'function' ? console.warn('🎊 Could not load worker', e) : null;
@@ -166,10 +158,10 @@
           return null;
         }
 
-        decorate(newWorker);
+        decorate(workerMap.get(canvas));
       }
 
-      return canvas ? canvas.__confetti_worker : defaultWorker;
+      return workerMap.get(canvas);
     };
   })();
 
