@@ -120,7 +120,7 @@
       };
     }
 
-    function workerForCanvas(canvas) {
+    return function (canvas) {
       var worker;
 
       if (!canvas) {
@@ -168,8 +168,6 @@
       canvas.__confetti_worker = worker;
       return worker;
     }
-
-    return workerForCanvas;
   })();
 
   var defaults = {
@@ -497,7 +495,8 @@
       }
 
       if (shouldUseWorker) {
-        // create the worker if we need it
+        // if we had to create the canvas we can now get a worker
+        // if the user supplied a canvas, the worker was created during init
         worker = getWorker(canvas) || null;
       }
 
