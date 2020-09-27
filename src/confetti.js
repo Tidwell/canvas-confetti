@@ -67,7 +67,7 @@
   }());
 
   var getWorker = (function () {
-    var worker;
+    var defaultWorker;
     var prom;
     var resolves = {};
 
@@ -121,9 +121,12 @@
       };
     }
 
-    return function () {
-      if (worker) {
-        return worker;
+    return function (canvas) {
+      if (canvas && canvas.__confetti_worker) {
+        return canvas.__confetti_worker;
+      }
+      if (!canvas && defaultWorker) {
+        return defaultWorker;
       }
 
       if (!isWorker && canUseWorker) {
@@ -150,7 +153,12 @@
           '}',
         ].join('\n');
         try {
-          worker = new Worker(URL.createObjectURL(new Blob([code])));
+          var newWorker = new Worker(URL.createObjectURL(new Blob([code])));
+          if (canvas) {
+            canvas.__confetti_worker = newWorker;
+          } else {
+            defaultWorker = newWorker;
+          }
         } catch (e) {
           // eslint-disable-next-line no-console
           typeof console !== undefined && typeof console.warn === 'function' ? console.warn('🎊 Could not load worker', e) : null;
@@ -158,10 +166,10 @@
           return null;
         }
 
-        decorate(worker);
+        decorate(newWorker);
       }
 
-      return worker;
+      return canvas ? canvas.__confetti_worker : defaultWorker;
     };
   })();
 
@@ -405,7 +413,7 @@
     var allowResize = !!prop(globalOpts || {}, 'resize');
     var globalDisableForReducedMotion = prop(globalOpts, 'disableForReducedMotion', Boolean);
     var shouldUseWorker = canUseWorker && !!prop(globalOpts || {}, 'useWorker');
-    var worker = shouldUseWorker ? getWorker() : null;
+    var worker = shouldUseWorker ? getWorker(canvas) : null;
     var resizer = isLibCanvas ? setCanvasWindowSize : setCanvasRectSize;
     var initialized = (canvas && worker) ? !!canvas.__confetti_initialized : false;
     var preferLessMotion = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion)').matches;
