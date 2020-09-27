@@ -121,6 +121,8 @@
     }
 
     function workerForCanvas(canvas) {
+      var worker;
+
       if (!canvas) {
         return null;
       }
@@ -152,8 +154,7 @@
           '}',
         ].join('\n');
         try {
-          var newWorker = new Worker(URL.createObjectURL(new Blob([code])));
-          canvas.__confetti_worker = newWorker;
+          worker = new Worker(URL.createObjectURL(new Blob([code])));
         } catch (e) {
           // eslint-disable-next-line no-console
           typeof console !== undefined && typeof console.warn === 'function' ? console.warn('🎊 Could not load worker', e) : null;
@@ -161,10 +162,11 @@
           return null;
         }
 
-        decorate(newWorker);
+        decorate(worker);
       }
 
-      return canvas.__confetti_worker;
+      canvas.__confetti_worker = worker;
+      return worker;
     }
 
     return workerForCanvas;
