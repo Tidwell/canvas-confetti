@@ -418,6 +418,12 @@
     var preferLessMotion = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion)').matches;
     var animationObj;
 
+    function destroyWorker() {
+      worker.terminate();
+      delete canvas.__confetti_worker;
+      worker = null;
+    }
+
     function fireLocal(options, size, done) {
       var particleCount = prop(options, 'particleCount', Math.floor);
       var angle = prop(options, 'angle', Number);
@@ -546,9 +552,7 @@
 
         if (isLibCanvas && canvas) {
           if (worker) {
-            worker.terminate();
-            delete canvas.__confetti_worker;
-            worker = null;
+            destroyWorker();
           }
           document.body.removeChild(canvas);
           canvas = null;
@@ -574,6 +578,12 @@
 
       if (animationObj) {
         animationObj.reset();
+      }
+    };
+
+    fire.destroy = function() {
+      if (worker) {
+        destroyWorker();
       }
     };
 
