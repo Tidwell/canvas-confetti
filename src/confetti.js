@@ -167,7 +167,7 @@
 
       canvas.__confetti_worker = worker;
       return worker;
-    }
+    };
   })();
 
   var defaults = {
