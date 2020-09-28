@@ -586,13 +586,6 @@
       }
     };
 
-    fire.debug = () => {
-      navigator.serviceWorker.getRegistrations().then(function(registrations) {
-        console.log(registrations);
-        registrations.forEach(function(v) { console.log('service worker: ' + v) });
-      })
-    }
-
     return fire;
   }
 
