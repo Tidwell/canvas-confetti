@@ -67,11 +67,10 @@
   }());
 
   var getWorker = (function () {
-    var worker;
-    var prom;
-    var resolves = {};
-
     function decorate(worker) {
+      var prom;
+      var resolves = {};
+
       function execute(options, callback) {
         worker.postMessage({ options: options || {}, callback: callback });
       }
@@ -121,9 +120,14 @@
       };
     }
 
-    return function () {
-      if (worker) {
-        return worker;
+    return function (canvas) {
+      var worker;
+
+      if (!canvas) {
+        return null;
+      }
+      if (canvas.__confetti_worker) {
+        return canvas.__confetti_worker;
       }
 
       if (!isWorker && canUseWorker) {
@@ -161,6 +165,7 @@
         decorate(worker);
       }
 
+      canvas.__confetti_worker = worker;
       return worker;
     };
   })();
@@ -405,11 +410,17 @@
     var allowResize = !!prop(globalOpts || {}, 'resize');
     var globalDisableForReducedMotion = prop(globalOpts, 'disableForReducedMotion', Boolean);
     var shouldUseWorker = canUseWorker && !!prop(globalOpts || {}, 'useWorker');
-    var worker = shouldUseWorker ? getWorker() : null;
+    var worker = shouldUseWorker && canvas ? getWorker(canvas) : null;
     var resizer = isLibCanvas ? setCanvasWindowSize : setCanvasRectSize;
     var initialized = (canvas && worker) ? !!canvas.__confetti_initialized : false;
     var preferLessMotion = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion)').matches;
     var animationObj;
+
+    function destroyWorker() {
+      worker.terminate();
+      delete canvas.__confetti_worker;
+      worker = null;
+    }
 
     function fireLocal(options, size, done) {
       var particleCount = prop(options, 'particleCount', Math.floor);
@@ -483,6 +494,12 @@
         resizer(canvas);
       }
 
+      if (shouldUseWorker) {
+        // if we had to create the canvas we can now get a worker
+        // if the user supplied a canvas, the worker was created during init
+        worker = getWorker(canvas) || null;
+      }
+
       var size = {
         width: canvas.width,
         height: canvas.height
@@ -533,6 +550,9 @@
         }
 
         if (isLibCanvas && canvas) {
+          if (worker) {
+            destroyWorker();
+          }
           document.body.removeChild(canvas);
           canvas = null;
           initialized = false;
@@ -557,6 +577,12 @@
 
       if (animationObj) {
         animationObj.reset();
+      }
+    };
+
+    fire.destroy = function() {
+      if (worker) {
+        destroyWorker();
       }
     };
 

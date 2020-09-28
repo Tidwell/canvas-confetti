@@ -894,6 +894,44 @@ test('calling `reset` method clears all existing confetti but more can be launch
   t.deepEqual(await uniqueColors(await reduceImg(img3)), ['#ff0000', '#ffffff']);
 });
 
+test('calling `destroy` method removes the worker', async t => {
+  const page = t.context.page = await fixturePage();
+
+  const promise = page.evaluate(`new Promise((resolve, reject) => {
+    const results = [];
+    confetti();
+    const canvas = document.querySelector('canvas');
+    results.push(!!canvas.__confetti_worker);
+    confetti.destroy();
+    results.push(!!canvas.__confetti_worker);
+    resolve(results);
+  })`);
+
+  const results = await promise;
+
+  t.deepEqual(results, [true, false]);
+});
+
+test('different canvas use their own worker', async t => {
+  const page = t.context.page = await fixturePage();
+  await injectCanvas(page, { useWorker: true });
+  await injectCanvas(page, { useWorker: true });
+
+  const promise = page.evaluate(`new Promise((resolve, reject) => {
+    const results = [];
+    confetti();
+    const canvas = document.querySelectorAll('canvas');
+    results.push(canvas.length);
+    results.push(!!(canvas[1].__confetti_worker && canvas[2].__confetti_worker));
+    results.push(canvas[1].__confetti_worker === canvas[2].__confetti_worker);
+    resolve(results);
+  })`);
+
+  const results = await promise;
+
+  t.deepEqual(results, [3, true, false]);
+});
+
 /*
  * Browserify tests
  */

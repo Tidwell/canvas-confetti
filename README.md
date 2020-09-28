@@ -133,6 +133,35 @@ setTimeout(() => {
 }, 100);
 ```
 
+### `confetti.destroy()`
+
+Destroys the confetti instance and stops any workers. In the case of a separate confetti instance created with [`confetti.create`](#confetticreatecanvas-globaloptions--function), that instance will have its own `destroy` method.  You will only need to call this
+if you are planning to stop and remove a custom canvas that is using a worker.
+
+It is recommended to call as part of a component unmount/destroy lifecycle event if you are wrapping the confetti library with a react/vue/angular/etc component).
+
+```javascript
+confetti();
+
+setTimeout(() => {
+  confetti.destroy();
+}, 100);
+```
+
+```javascript
+var myCanvas = document.createElement('canvas');
+document.appendChild(myCanvas);
+
+var myConfetti = confetti.create(myCanvas, { resize: true, useWorker: true });
+
+myConfetti();
+
+setTimeout(() => {
+  myConfetti.destroy();
+  document.removeChild(myCanvas);
+}, 100);
+```
+
 ## Examples
 
 Launch some confetti the default way:
